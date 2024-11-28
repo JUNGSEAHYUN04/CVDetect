@@ -1,2 +1,2 @@
 # CVDetect
-DMU - computer_vision
+DMU - Computer_Vision Team Project
