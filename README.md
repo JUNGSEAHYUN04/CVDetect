@@ -44,7 +44,7 @@
   # 신호등 음성 안내 기록
   last_traffic_light_state = None  # 마지막 안내된 신호등 상태
 
- # 객체 결과 확인
+# 객체 결과 확인
     for obj in results[0].boxes.data.tolist():
         confidence = obj[4]
         if confidence >= 0.5:
@@ -52,8 +52,44 @@
             if class_id == TRAFFIC_LIGHT_CLASS_ID:  # 클래스 id가 신호등의 id와 같으면
                 traffic_light_detected = True
                 # 경계 상자 좌표 추출
-                x1, y1, x2, y2 = map(int, obj[:4])  # 경계 상자 좌경
-  </h6>
+                x1, y1, x2, y2 = map(int, obj[:4])  # 경계 상자 좌표
+                traffic_light_roi = frame[y1:y2, x1:x2]
+                hsv = cv2.cvtColor(traffic_light_roi, cv2.COLOR_BGR2HSV)
+                # 신호등 색상 범위 설정 (초록, 빨강)
+                # 신호등 색상 범위 설정 (파랑, 빨강)
+                blue_lower = np.array([100, 50, 50])  # 파란색 하한
+                blue_upper = np.array([140, 255, 255])  # 파란색 상한
+                red_lower1 = np.array([0, 50, 50])  # 빨간색 하한 
+                red_upper1 = np.array([10, 255, 255])  # 빨간색 상한 
+                red_lower2 = np.array([170, 50, 50])  # 빨간색 하한 
+                red_upper2 = np.array([180, 255, 255])  # 빨간색 상한 
+                # 파랑, 빨강 마스크 생성
+                blue_mask = cv2.inRange(hsv, blue_lower, blue_upper)
+                red_mask = cv2.inRange(hsv, red_lower1, red_upper1) + cv2.inRange(hsv, red_lower2, red_upper2)
+                # 파랑, 빨강 비율 계산
+                blue_ratio = np.sum(blue_mask > 0) / blue_mask.size  # 초록 픽셀 비율
+                red_ratio = np.sum(red_mask > 0) / red_mask.size  # 빨강 픽셀 비율
+                # 신호등 상태 판단
+                if blue_ratio > 0.05:  # 초록 픽셀이 5% 이상일 때
+                    green_light_detected = True
+                if red_ratio > 0.05:  # 빨간 픽셀이 5% 이상일 때
+                    red_light_detected = True
+                print(f"파란불 비율: {blue_ratio}, 빨간불 비율: {red_ratio}")
+    # 신호등 탐지 시에만 음성 안내
+    if traffic_light_detected:
+        if green_light_detected and last_traffic_light_state != "green":
+            # 초록불 감지 시
+            speech_queue.put("파란불 입니다")
+            last_traffic_light_state = "green"
+        elif red_light_detected and last_traffic_light_state != "red":
+            # 빨간불 감지 시
+            speech_queue.put("빨간불 입니다")
+            last_traffic_light_state = "red"
+  ```
+<h3>결과 화면</h3>
+<img width="306" alt="20241207_181224" src="https://github.com/user-attachments/assets/d45091a0-b09b-4e60-a2ef-8a7b88ab3b00">
+<h2>위험 물질 감지🔥</h2> 
+  ## 설명
 </div>
 
 # 결과 
